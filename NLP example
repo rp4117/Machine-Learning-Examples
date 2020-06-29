@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun 18 15:09:48 2020
+
+@author: roryp
+"""
+
+from __future__ import absolute_import, division, print_function, unicode_literals
+import pandas as pd
+import seaborn as sns
+from math import floor, ceil
+from pylab import rcParams
+from sklearn.model_selection import train_test_split
+# TensorFlow and tf.keras
+import tensorflow as tf
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.utils import class_weight
+import pandas
+from keras.models import Sequential
+from keras.layers import Dense, Flatten, Dropout
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import Pipeline
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from keras.layers import Embedding
+from keras.layers import GlobalAveragePooling1D
+vocab_size = 1000
+embedding_dim = 16
+max_length = 16
+trunc_type = 'post'
+padding_type = 'post'
+oov_tok = "<OOV>"
+training_size = 20000
+
+train_sentences = ['I like bananas',
+             'I hate cats but love my dog',
+             'Penis hates cheese!!',
+             'why i like dances',
+             'cool are you?',
+             'do dolphins fart']
+
+
+tokenizer = Tokenizer(num_words = vocab_size, oov_token=oov_tok)
+tokenizer.fit_on_texts(train_sentences)
+word_index = tokenizer.word_index
+#print(word_index)
+
+train_seq = tokenizer.texts_to_sequences(train_sentences)
+train_padded = pad_sequences(train_seq, padding=padding_type, maxlen=max_length)
+
+test_sentences = ['I really love my dog',
+             'why do dolphins fart',
+             'dances are cool']
+
+test_seq = tokenizer.texts_to_sequences(test_sentences)
+test_padded = pad_sequences(test_seq, padding=padding_type, maxlen=max_length)
+
+labels = ['incest is cool'
+          'i dont know if this will work',
+          'why doesnt this work?']
+
+train_labels=['two in the pink one in the stink',
+              'this sandiwch tastes quite delicious',
+              'this is soft']
+test_labels=['Belinda is my fit mum',
+             'haj has shoes',
+             'who are you']
+
+label_tokenizer = Tokenizer()
+label_tokenizer.fit_on_texts(labels)
+
+train_label_seq = np.array(label_tokenizer.texts_to_sequences(train_labels))
+test_label_seq = np.array(label_tokenizer.texts_to_sequences(test_labels))
+
+model = Sequential([Embedding(vocab_size, embedding_dim, input_length=max_length),
+                    GlobalAveragePooling1D(),
+                    Dense(6, activation = 'relu'),
+                    Dense(6, activation = 'sigmoid')])
+
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.summary()
+
+num_epochs = 30
+history = model.fit(train_padded, train_label_seq, epochs=num_epochs,
+                    validation_data=(test_padded,test_label_seq), verbose = 2)
